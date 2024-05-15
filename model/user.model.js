@@ -1,19 +1,33 @@
-import mongoose from 'mongoose';
-
 import CONSTANTS from '../util/constant';
 
-const userSchema = new mongoose.Schema({
+const mongoose = require('mongoose');
+
+const { Schema } = mongoose;
+
+const bcrypt = require('bcrypt');
+
+const userSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: {
-    type: String, default: 'admin', enum: CONSTANTS.ROLE, required: true,
+    type: String, enum: CONSTANTS.ROLE, required: true,
   },
   profileImage: { type: String },
 }, {
   timestamps: true,
 });
 
-const User = mongoose.model('user', userSchema);
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
 
-export default User;
+// Method to validate password
+userSchema.methods.isValidPassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+module.exports = mongoose.model('user', userSchema);

@@ -1,18 +1,83 @@
-import AuthService from '../service/auth.service';
-import ErrorConstants from '../util/errorConstants';
-import CommonUtils from '../util/common';
+const express = require('express');
+const User = require('../model/user.model');
 
-/**
- * @description User will able to login in the system.
- * @property {object} req Object - to get the parameter
- * @property {object} res Object - response obeject to send the response.
- * @returns {oject} loginData- All login information to login.
- */
-export const login = async (req, res) => {
+const router = express.Router();
+const { authenticate, authorize } = require('../middleware/auth');
+
+router.get('/', async (req, res) => {
   try {
-    const loginData = await AuthService.loginUser(req.body);
-    return res.status(ErrorConstants.OK).json(loginData);
-  } catch (err) {
-    return CommonUtils.errorResponse(err, res);
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).send('Error fetching users');
   }
-};
+});
+
+// Get user by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).send('User not found');
+    }
+  } catch (error) {
+    res.status(500).send('Error fetching user');
+  }
+});
+
+// Create a new user
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const {
+      name, email, password, role,
+    } = req.body;
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send('User already exists');
+    }
+    const newUser = new User({
+      name, email, password, role,
+    });
+    const user = await newUser.save();
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(400).send('Error creating user');
+  }
+});
+
+// Update a user
+router.put('/:id', authenticate, async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true },
+    );
+    if (updatedUser) {
+      res.json(updatedUser);
+    } else {
+      res.status(404).send('User not found');
+    }
+  } catch (error) {
+    res.status(500).send('Error updating user');
+  }
+});
+
+// Delete a user
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    if (deletedUser) {
+      res.json(deletedUser);
+    } else {
+      res.status(404).send('User not found');
+    }
+  } catch (error) {
+    res.status(500).send('Error deleting user');
+  }
+});
+
+module.exports = router;

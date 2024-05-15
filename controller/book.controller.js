@@ -5,7 +5,7 @@ const BookModel = require('../model/book.model');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Get All Book
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const books = await BookModel.find();
     res.json({ books });
@@ -15,21 +15,20 @@ router.get('/', async (req, res) => {
 });
 
 // Create Book
-router.post('/', async (req, res) => {
+router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { title, author } = req.body;
     const newBook = new BookModel({ title, author });
     await newBook.save();
-    console.log('success');
     res.status(201).json(newBook);
   } catch (err) {
-    console.log('err', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // Assign Book to User
-router.post('/assign-book', authenticate, authorize('sub-admin'), async (req, res) => {
+// router.post('/assign-book', authenticate, authorize('admin'), async (req, res) => {
+router.post('/assign-book', authenticate, async (req, res) => {
   try {
     const { bookId, userId } = req.body;
     const book = await BookModel.findById(bookId);
@@ -49,7 +48,7 @@ router.post('/assign-book', authenticate, authorize('sub-admin'), async (req, re
 });
 
 // Return Book
-router.post('/return-book', authenticate, authorize('sub-admin'), async (req, res) => {
+router.post('/return-book', authenticate, async (req, res) => {
   try {
     const { bookId } = req.body;
     const book = await BookModel.findById(bookId);
