@@ -3,7 +3,7 @@ const hashKey = process.env.HASH_KEY;
 const landgrid_token = process.env.LANDGRID_TOKEN;
 
 const DATABASE = {
-  databaseUrl: `mongodb://${process.env.DATABASE_URL}`,
+  databaseUrl: process.env.DATABASE_URL,
   databaseName: process.env.DATABASE_NAME,
 };
 

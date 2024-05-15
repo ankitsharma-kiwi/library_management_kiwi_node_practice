@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
 import config from '../config/index.config';
 import User from './user.model';
+import Book from './book.model';
 
 const connectDb = () => {
   let connect;
-  console.log(config.DATABASE, 'Database is connected');
-  if (`${config.DATABASE.databaseUrl}/${config.DATABASE.databaseName}`) {
+  if (`${config.DATABASE.databaseUrl}`) {
     connect = mongoose.connect(
-      `${config.DATABASE.databaseUrl}/${config.DATABASE.databaseName}`,
-      { },
+      `${config.DATABASE.databaseUrl}`,
+      { useNewUrlParser: true },
     ).then(
       () => { console.log('Database is connected'); },
       (err) => { console.log(`Can not connect to the database${err}`); },
@@ -20,6 +20,7 @@ const connectDb = () => {
 
 const models = {
   User,
+  Book,
 };
 
 export { connectDb };

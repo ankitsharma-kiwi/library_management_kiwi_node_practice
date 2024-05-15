@@ -34,7 +34,9 @@ CONSTANTS.MESSAGE = {
 };
 CONSTANTS.MATCH_ROLE = ['artist', 'manager'];
 
-CONSTANTS.ROLE = {};
+CONSTANTS.ROLE = ['admin', 'sub-admin', 'user'];
+
+CONSTANTS.BOOK_STATUS = ['available', 'assigned'];
 
 CONSTANTS.NUMBER = {
   ONE: 1,

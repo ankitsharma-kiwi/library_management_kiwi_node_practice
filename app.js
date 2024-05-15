@@ -28,7 +28,6 @@ const PORT = process.env.PORT || 8080;
 connectDb().then(async () => {
   app.listen(PORT, (err) => {
     if (err) throw err;
-    console.log(`> Ready on http://localhost:${PORT}`);
   });
 });
 
