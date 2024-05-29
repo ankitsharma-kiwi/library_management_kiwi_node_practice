@@ -2,7 +2,8 @@ const express = require('express');
 
 const router = express.Router();
 const BookModel = require('../model/book.model');
-const { authenticate, authorize } = require('../middleware/auth');
+const UserModel = require('../model/user.model');
+const { authenticate } = require('../middleware/auth');
 
 // Get All Book
 router.get('/', authenticate, async (req, res) => {
@@ -15,7 +16,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Create Book
-router.post('/', authenticate, authorize('admin'), async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { title, author } = req.body;
     const newBook = new BookModel({ title, author });
@@ -26,7 +27,6 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
-// Assign Book to User
 // router.post('/assign-book', authenticate, authorize('admin'), async (req, res) => {
 router.post('/assign-book', authenticate, async (req, res) => {
   try {
@@ -62,6 +62,22 @@ router.post('/return-book', authenticate, async (req, res) => {
     await book.save();
 
     res.json(book);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/assigend-user-details', authenticate, async (req, res) => {
+  try {
+    const { bookId } = req.body;
+    const book = await BookModel.findById(bookId);
+    if (book?.assignedTo) {
+      const user = await UserModel.findById(book.assignedTo).select('name email -_id');
+      const newObj = { ...book._doc, assignedTo: user };
+      res.json(newObj);
+    } else {
+      res.status(404).json({ message: 'Book not found.' });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

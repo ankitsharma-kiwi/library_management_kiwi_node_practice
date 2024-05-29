@@ -15,13 +15,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).send('Invalid email or password');
     }
 
-    // Check if password is valid
     const isPasswordValid = await user.isValidPassword(password);
     if (!isPasswordValid) {
       return res.status(401).send('Invalid email or password');
     }
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      {
+        userId: user._id, email: user.email, role: user.role, permissions: user.permissions ?? '',
+      },
       SECRET,
       { expiresIn: '1h' },
     );

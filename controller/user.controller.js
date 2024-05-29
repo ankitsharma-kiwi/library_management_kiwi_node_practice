@@ -1,5 +1,7 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const User = require('../model/user.model');
+const upload = require('../helper/uploadConfig');
 
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
@@ -28,23 +30,26 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create a new user
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, authorize('admin'), upload.single('profileImage'), async (req, res) => {
   try {
     const {
-      name, email, password, role,
+      name, email, password, role, permissions,
     } = req.body;
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).send('User already exists');
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
-      name, email, password, role,
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      permissions,
+      profileImage: req.file ? req.file.path : undefined, // Set profileImage path
     });
-    const user = await newUser.save();
-    res.status(201).json(user);
-  } catch (error) {
-    res.status(400).send('Error creating user');
+
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -77,6 +82,21 @@ router.delete('/:id', authenticate, async (req, res) => {
     }
   } catch (error) {
     res.status(500).send('Error deleting user');
+  }
+});
+
+router.put('/:id/permissions', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.sendStatus(404);
+    }
+
+    user.permissions = req.body.permissions;
+    await user.save();
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

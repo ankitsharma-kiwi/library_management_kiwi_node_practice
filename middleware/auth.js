@@ -29,4 +29,14 @@ const authorize = (role) => (req, res, next) => {
   next();
 };
 
-module.exports = { authenticate, authorize };
+const authorizePermission = (permission) => (req, res, next) => {
+  if (!req.user.permissions.includes(permission)) {
+    res.sendStatus(403);
+    return;
+  }
+  next();
+};
+
+module.exports = {
+  authenticate, authorize, authorizePermission,
+};

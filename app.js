@@ -20,6 +20,7 @@ app.use(morgan('combined'));
 app.use(cors());
 app.use(compression());
 app.use('/apidoc', express.static('apidoc'));
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api/v1', router);
 
