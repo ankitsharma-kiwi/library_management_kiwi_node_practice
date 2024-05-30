@@ -20,6 +20,10 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { title, author } = req.body;
+    const book = await BookModel.findOne({ title });
+    if (book) {
+      return res.status(400).json({ error: 'Book already exists' });
+    }
     const newBook = new BookModel({ title, author });
     await newBook.save();
     res.status(201).json(newBook);
