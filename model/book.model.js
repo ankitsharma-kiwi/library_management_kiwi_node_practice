@@ -8,6 +8,7 @@ const BookSchema = new mongoose.Schema({
   status: { type: String, enum: CONSTANTS.BOOK_STATUS, default: 'available' },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedDate: { type: Date },
+  returnDate: { type: Date },
 }, {
   timestamps: true,
 });

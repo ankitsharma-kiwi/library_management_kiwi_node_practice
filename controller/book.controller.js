@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const BookModel = require('../model/book.model');
 const UserModel = require('../model/user.model');
-const { authenticate } = require('../middleware/auth');
+const BookHistory = require('../model/bookHistory.model');
+const { authenticate, authorize } = require('../middleware/auth');
 
 // Get All Book
 router.get('/', authenticate, async (req, res) => {
@@ -27,43 +28,77 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// router.post('/assign-book', authenticate, authorize('admin'), async (req, res) => {
-router.post('/assign-book', authenticate, async (req, res) => {
+// assign book
+router.post('/assign', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { bookId, userId } = req.body;
-    const book = await BookModel.findById(bookId);
 
-    if (book.assignedTo) {
-      return res.status(400).json({ message: 'Book already assigned.' });
+    const book = await BookModel.findById(bookId);
+    if (!book || book.assignedTo) {
+      return res.status(400).json({ error: 'Book is already assigned or does not exist' });
     }
 
-    book.assignedTo = userId;
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(400).json({ error: 'User does not exist' });
+    }
+
+    book.assignedTo = user._id;
     book.assignedDate = new Date();
+    book.returnDate = new Date(new Date().setDate(new Date().getDate() + 7)); // 1 week
+
     await book.save();
 
-    res.json(book);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const history = new BookHistory({
+      book: book._id,
+      user: user._id,
+      action: 'assign',
+      assignedDate: new Date(),
+      returnDate: '',
+    });
+    await history.save();
+
+    res.status(200).json(book);
+  } catch (error) {
+    console.error('Error assigning book:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 // Return Book
-router.post('/return-book', authenticate, async (req, res) => {
+router.post('/return', authenticate, async (req, res) => {
   try {
     const { bookId } = req.body;
-    const book = await BookModel.findById(bookId);
 
-    if (!book.assignedTo) {
-      return res.status(400).json({ message: 'Book is not assigned.' });
+    const book = await BookModel.findById(bookId);
+    if (!book || !book.assignedTo) {
+      return res.status(400).json({ error: 'Book is not assigned or does not exist' });
     }
+
+    const user = await UserModel.findById(book.assignedTo);
+    if (!user) {
+      return res.status(400).json({ error: 'User does not exist' });
+    }
+
+    const history = new BookHistory({
+      book: book._id,
+      user: user._id,
+      action: 'return',
+      returnDate: new Date(),
+      assignedDate: book.assignedDate,
+    });
+    await history.save();
 
     book.assignedTo = null;
     book.assignedDate = null;
+    book.returnDate = new Date();
+
     await book.save();
 
-    res.json(book);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(200).json(book);
+  } catch (error) {
+    console.error('Error returning book:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -80,6 +115,18 @@ router.get('/assigend-user-details', authenticate, async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/:bookId/history', authenticate, async (req, res) => {
+  try {
+    const { bookId } = req.params;
+    const history = await BookHistory.find({ book: bookId }).populate('user', 'name email');
+
+    res.status(200).json(history);
+  } catch (error) {
+    console.error('Error fetching book history:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
