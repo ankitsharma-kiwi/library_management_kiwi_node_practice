@@ -7,10 +7,10 @@ const { Schema } = mongoose;
 const bcrypt = require('bcrypt');
 
 const UserSchema = new Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  name: { type: String, required: [true, 'User name is required'] },
+  email: { type: String, required: [true, 'User email is required'], unique: [true, 'Email is already used.'] },
   password: { type: String, required: true },
-  role: { type: String, enum: CONSTANTS.ROLE, required: true },
+  role: { type: String, enum: CONSTANTS.ROLE, required: [true, 'User role is required, it should be admin, sub-admin, user'] },
   profileImage: { type: String },
   permissions: { type: [String], default: [] },
 }, {

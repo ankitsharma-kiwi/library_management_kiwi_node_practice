@@ -125,13 +125,30 @@ router.get('/assigend-user-details', authenticate, async (req, res) => {
 router.get('/:bookId/history', authenticate, async (req, res) => {
   try {
     const { bookId } = req.params;
-    const history = await BookHistory.find({ book: bookId }).populate('user', 'name email');
+    // eslint-disable-next-line radix
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
 
-    res.status(200).json(history);
+    const history = await BookHistory.find({ book: bookId })
+      .populate('user', 'name email')
+      .populate('book', 'title author')
+      .skip(skip)
+      .limit(limit);
+
+    const totalCount = await BookHistory.countDocuments({ book: bookId });
+
+    res.status(200).json({
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+      totalCount,
+      history,
+    });
   } catch (error) {
     console.error('Error fetching book history:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
 
 module.exports = router;
