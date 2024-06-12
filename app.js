@@ -20,6 +20,7 @@ app.use(morgan('combined'));
 app.use(cors());
 app.use(compression());
 app.use('/apidoc', express.static('apidoc'));
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api/v1', router);
 
@@ -28,7 +29,6 @@ const PORT = process.env.PORT || 8080;
 connectDb().then(async () => {
   app.listen(PORT, (err) => {
     if (err) throw err;
-    console.log(`> Ready on http://localhost:${PORT}`);
   });
 });
 
